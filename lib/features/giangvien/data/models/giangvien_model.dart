@@ -1,39 +1,28 @@
-class GiangVienModel {
-  final int? maGV;
-  final String? hoTen;
-  final String? email;
-  final String? sdt;
-  final String? maKhoa;
-  final String? tenKhoa;
+class GiangVien {
+  final int maGV;
+  final String hoTen;
+  final String email;
+  final String? soDienThoai;
+  final String? hocVi;
+  final int? maKhoa;
 
-  GiangVienModel({
-    this.maGV,
-    this.hoTen,
-    this.email,
-    this.sdt,
+  GiangVien({
+    required this.maGV,
+    required this.hoTen,
+    required this.email,
+    this.soDienThoai,
+    this.hocVi,
     this.maKhoa,
-    this.tenKhoa,
   });
 
-  factory GiangVienModel.fromJson(Map<String, dynamic> json) {
-    return GiangVienModel(
+  factory GiangVien.fromJson(Map<String, dynamic> json) {
+    return GiangVien(
       maGV: json['maGV'],
       hoTen: json['hoTen'],
       email: json['email'],
-      sdt: json['sdt'],
+      soDienThoai: json['soDienThoai'],
+      hocVi: json['hocVi'],
       maKhoa: json['maKhoa'],
-      tenKhoa: json['tenKhoa'],
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'maGV': maGV,
-      'hoTen': hoTen,
-      'email': email,
-      'sdt': sdt,
-      'maKhoa': maKhoa,
-      'tenKhoa': tenKhoa,
-    };
   }
 }
