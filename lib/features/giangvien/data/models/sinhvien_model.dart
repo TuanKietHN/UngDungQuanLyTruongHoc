@@ -20,22 +20,6 @@ class SinhVien {
   }) : diemDanhChiTiet = diemDanhChiTiet ?? [];
 
   String get avatarOrDefault => avatar ?? 'assets/images/toandeptrai.jpg';
-
-  // Phương thức fromJson để chuyển đổi từ Map sang đối tượng SinhVien
-  factory SinhVien.fromJson(Map<String, dynamic> json) {
-    return SinhVien(
-      ma: json['ma'] ?? '',
-      ten: json['ten'] ?? '',
-      lop: json['lop'] ?? '',
-      trangThai: json['trangThai'] ?? 'unknown',
-      avatar: json['avatar'],
-      soBuoiDiemDanh: json['soBuoiDiemDanh'] ?? 0,
-      diemDanhChiTiet: (json['diemDanhChiTiet'] as List?)
-          ?.map((e) => DiemDanhBuoiHocChiTiet.fromJson(e))
-          .toList() ??
-          [],
-    );
-  }
 }
 
 // =================== DỮ LIỆU MẪU SINH VIÊN ===================
