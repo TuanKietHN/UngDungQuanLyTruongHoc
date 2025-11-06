@@ -1,17 +1,12 @@
 import '../datasources/giangvien_api.dart';
-import '../models/lophocphan_model.dart';
-import '../models/sinhvien_model.dart';
-class GiangVienRepository {
-  final GiangVienApi api = GiangVienApi();
+import '../models/giangvien_model.dart';
 
-  Future<List<LopHocPhan>> fetchLopHocPhan() async {
-    final response = await api.getLopHocPhan();
-    // "data" chứa danh sách lớp học phần
-    final data = response['data'] ?? [];
-    return data.map<LopHocPhan>((e) => LopHocPhan.fromJson(e)).toList();
-  }
-  Future<List<SinhVien>> fetchSinhVienByLopHocPhan(String maLopHocPhan) async {
-    final data = await api.getSinhVienByLopHocPhan(maLopHocPhan);
-    return data.map<SinhVien>((e) => SinhVien.fromJson(e)).toList();
+class GiangVienRepository {
+  final GiangVienApi api;
+
+  GiangVienRepository(this.api);
+
+  Future<GiangVien> getGiangVienById(int id) async {
+    return await api.fetchGiangVienById(id);
   }
 }
