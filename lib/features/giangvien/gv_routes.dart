@@ -24,7 +24,7 @@ class GvRoutes {
   static Map<String, WidgetBuilder> staticRoutes = {
     dashboard: (_) {
       final gv = GiangVienController().giangVien;
-      return GiangVienDashboardScreen(giangVien: gv);
+      return GiangVienDashboardScreen();
     },
     diemdanh: (_) {
       final gv = GiangVienController().giangVien;

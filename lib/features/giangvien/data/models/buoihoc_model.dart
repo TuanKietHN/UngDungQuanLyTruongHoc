@@ -1,139 +1,60 @@
-import 'sinhvien_model.dart';
-import 'chitiet_sv_diemdanh_model.dart';
-
 class BuoiHoc {
-  // ===== Thông tin chung =====
+  final int maBuoi;
   final String tenMon;
-  final String lop;
-  final String phong;
-
-  // ===== Thông tin điểm danh =====
-  final int? diemDanhHienTai;
-  final int? tongSoBuoi;
-
-  // ===== Thông tin lịch dạy =====
-  final String? thoiGian;
-  final DateTime? ngay;
-  final String? ki;
-  final String? namHoc;
-  final String? tuan;
-
-  // ===== Danh sách sinh viên =====
-  final List<SinhVien> danhSachSinhVien;
-
-  // ===== Chi tiết điểm danh từng sinh viên =====
-  final Map<String, List<DiemDanhBuoiHocChiTiet>> diemDanhChiTietCuaSV;
+  final String maSoLopHP;
+  final DateTime ngayHoc;
+  final String gioBatDau;
+  final String gioKetThuc;
+  final String phongHoc;
 
   BuoiHoc({
+    required this.maBuoi,
     required this.tenMon,
-    required this.lop,
-    required this.phong,
-    this.diemDanhHienTai,
-    this.tongSoBuoi,
-    this.thoiGian,
-    this.ngay,
-    this.ki,
-    this.namHoc,
-    this.tuan,
-    this.danhSachSinhVien = const [],
-    Map<String, List<DiemDanhBuoiHocChiTiet>>? diemDanhChiTietCuaSV,
-  }) : diemDanhChiTietCuaSV = diemDanhChiTietCuaSV ?? {};
+    required this.maSoLopHP,
+    required this.ngayHoc,
+    required this.gioBatDau,
+    required this.gioKetThuc,
+    required this.phongHoc,
+  });
 
-  // ===== Getter tỉ lệ điểm danh của lớp =====
-  double get tiLeDiemDanh {
-    if (diemDanhHienTai == null || tongSoBuoi == null || tongSoBuoi == 0) {
-      return 0;
+  factory BuoiHoc.fromJson(Map<String, dynamic> json) {
+    int _asInt(dynamic v, [int def = 0]) {
+      if (v == null) return def;
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v) ?? def;
+      if (v is double) return v.toInt();
+      return def;
     }
-    return (diemDanhHienTai! / tongSoBuoi!).clamp(0.0, 1.0);
+
+    String _asString(dynamic v, [String def = '']) => v == null ? def : v.toString();
+
+    DateTime _asDate(dynamic v, {DateTime? def}) {
+      if (v == null) return def ?? DateTime.now();
+      if (v is DateTime) return v;
+      if (v is String) return DateTime.tryParse(v) ?? (def ?? DateTime.now());
+      return def ?? DateTime.now();
+    }
+
+    return BuoiHoc(
+      maBuoi: _asInt(json['maBuoi']),
+      tenMon: _asString(json['tenMon']),
+      maSoLopHP: _asString(json['maSoLopHP']),
+      ngayHoc: _asDate(json['ngayHoc']),
+      gioBatDau: _asString(json['gioBatDau']),
+      gioKetThuc: _asString(json['gioKetThuc']),
+      phongHoc: _asString(json['phongHoc']),
+    );
   }
 
-  // ===== Getter tỉ lệ điểm danh từng sinh viên =====
-  double tiLeDiemDanhCuaSinhVien(SinhVien sv) {
-    if (tongSoBuoi == null || tongSoBuoi == 0) return 0;
-    return (sv.soBuoiDiemDanh / tongSoBuoi!).clamp(0.0, 1.0);
-  }
+  Map<String, dynamic> toJson() => {
+    'maBuoi': maBuoi,
+    'tenMon': tenMon,
+    'maSoLopHP': maSoLopHP,
+    'ngayHoc': ngayHoc.toIso8601String(),
+    'gioBatDau': gioBatDau,
+    'gioKetThuc': gioKetThuc,
+    'phongHoc': phongHoc,
+  };
 
-  // ===== Hàm helper nối chi tiết điểm danh =====
-  static List<BuoiHoc> buildWithChiTiet(
-      List<BuoiHoc> quanLyLop, List<BuoiHoc> lichDay) {
-    return quanLyLop.map((lop) {
-      final match = lichDay.firstWhere(
-            (b) =>
-        b.tenMon == lop.tenMon && b.lop == lop.lop && b.phong == lop.phong,
-        orElse: () => BuoiHoc(
-          tenMon: lop.tenMon,
-          lop: lop.lop,
-          phong: lop.phong,
-          diemDanhHienTai: lop.diemDanhHienTai,
-          tongSoBuoi: lop.tongSoBuoi,
-          danhSachSinhVien: lop.danhSachSinhVien,
-        ),
-      );
-
-      return BuoiHoc(
-        tenMon: lop.tenMon,
-        lop: lop.lop,
-        phong: lop.phong,
-        diemDanhHienTai: lop.diemDanhHienTai,
-        tongSoBuoi: lop.tongSoBuoi,
-        thoiGian: match.thoiGian,
-        ngay: match.ngay,
-        ki: match.ki,
-        namHoc: match.namHoc,
-        tuan: match.tuan,
-        danhSachSinhVien: lop.danhSachSinhVien,
-        diemDanhChiTietCuaSV: match.diemDanhChiTietCuaSV,
-      );
-    }).toList();
-  }
-
-  // =================== DỮ LIỆU BUỔI HỌC MẪU ===================
-  static final List<BuoiHoc> buoiHocMau = [
-    BuoiHoc(
-      tenMon: "Lập trình Flutter",
-      lop: "CNTT1",
-      phong: "B203",
-      diemDanhHienTai: 20,
-      tongSoBuoi: 45,
-      thoiGian: "07:00 - 09:00",
-      ngay: DateTime(2025, 11, 4),
-      ki: "Kì 1",
-      namHoc: "2025-2026",
-      tuan: "Tuần 1",
-      danhSachSinhVien: danhSachSinhVienMau
-          .where((sv) => sv.lop == "CNTT1")
-          .toList(),
-      diemDanhChiTietCuaSV: {
-        "SV001": danhSachSinhVienMau
-            .firstWhere((sv) => sv.ma == "SV001")
-            .diemDanhChiTiet,
-        "SV002": danhSachSinhVienMau
-            .firstWhere((sv) => sv.ma == "SV002")
-            .diemDanhChiTiet,
-      },
-    ),
-    BuoiHoc(
-      tenMon: "Cơ sở dữ liệu",
-      lop: "CNTT2",
-      phong: "C101",
-      diemDanhHienTai: 12,
-      tongSoBuoi: 20,
-      thoiGian: "15:00 - 24:00",
-      ngay: DateTime(2025, 11, 5),
-      ki: "Kì 1",
-      namHoc: "2025-2026",
-      tuan: "Tuần 1",
-      danhSachSinhVien: danhSachSinhVienMau
-          .where((sv) => sv.lop == "CNTT2")
-          .toList(),
-      diemDanhChiTietCuaSV: {
-        "SV003": danhSachSinhVienMau
-            .firstWhere((sv) => sv.ma == "SV003")
-            .diemDanhChiTiet,
-        "SV004": danhSachSinhVienMau
-            .firstWhere((sv) => sv.ma == "SV004")
-            .diemDanhChiTiet,
-      },
-    ),
-  ];
+  String get thoiGian => '$gioBatDau - $gioKetThuc';
 }

@@ -27,6 +27,7 @@ class ApiEndpoints {
   static const String pdtAssignSchedule = '$baseUrl/pdt/schedule/assign';
   static const String pdtThongBao = '$baseUrl/pdt/thongbao';
   static const String pdtKhuonMatPending = '$baseUrl/pdt/khuonmat/pending';
+  static const String pdtKhuonMatUpload = '$baseUrl/pdt/khuonmat/upload';
 
   // ================== GIẢNG VIÊN ==================
   static const String gvLichDay = '$baseUrl/giangvien/lichday';
@@ -34,10 +35,6 @@ class ApiEndpoints {
   static const String gvDiemDanh = '$baseUrl/giangvien/diemdanh';
   static const String gvGenerateQR = '$baseUrl/giangvien/buoihoc'; // + /{maBuoi}/qr
   static const String gvCloseQR = '$baseUrl/giangvien/buoihoc';    // + /{maBuoi}/close
-  static const String giangvienLopHocPhan = "$baseUrl/giangvien/lophocphan";
-  static String sinhVienByLopHocPhan(String id) =>
-      "$baseUrl/pdt/lophocphan/$id/sinhvien";
-
 
   // ================== SINH VIÊN ==================
   static const String svLichHoc = '$baseUrl/sinhvien/lichhoc';

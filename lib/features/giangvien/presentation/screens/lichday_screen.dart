@@ -1,348 +1,394 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../controllers/giangvien_controller.dart';
 import '../../data/models/buoihoc_model.dart';
-import '../../gv_routes.dart';
-import '../widgets/giangvien_bottom_nav.dart';
-import '../widgets/gv_side_menu.dart';
-import '../../data/models/giangvien_model.dart';
-// ===== Hàm helper hiển thị thứ =====
-String getThu(DateTime? ngay) {
-  if (ngay == null) return "-";
-  switch (ngay.weekday) {
-    case DateTime.monday:
-      return "T2";
-    case DateTime.tuesday:
-      return "T3";
-    case DateTime.wednesday:
-      return "T4";
-    case DateTime.thursday:
-      return "T5";
-    case DateTime.friday:
-      return "T6";
-    case DateTime.saturday:
-      return "T7";
-    case DateTime.sunday:
-      return "CN";
-    default:
-      return "-";
-  }
-}
+import './giangvien_dashboard_screen.dart';
+import './diemdanh_screen.dart';
+import './quanlylop_screen.dart';
+import './profile_screen.dart';
 
 class LichDayScreen extends StatefulWidget {
-  final GiangVien? giangVien;
-  const LichDayScreen({super.key, this.giangVien});
-
+  final dynamic giangVien;
+  final int? maGV;
+  const LichDayScreen({super.key, this.giangVien, this.maGV});
 
   @override
   State<LichDayScreen> createState() => _LichDayScreenState();
 }
 
 class _LichDayScreenState extends State<LichDayScreen> {
-  final int _currentIndex = 1; // Lịch dạy
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  String selectedTerm = 'Kì 1';
-  String selectedYear = '';
-  String selectedWeek = 'Tuần 1';
-
-  late List<String> years;
-  final List<String> terms = ['Kì 1', 'Kì 2'];
-  final List<String> weeks = List.generate(10, (index) => 'Tuần ${index + 1}');
-  DateTime selectedDate = DateTime.now();
-
-  late List<BuoiHoc> lichDayHomNay;
-  List<BuoiHoc> displayedBuoiHoc = [];
-  bool isFilteringByDate = true;
+  late final GiangVienController controller;
 
   @override
   void initState() {
     super.initState();
-    final currentYear = DateTime.now().year;
-    years = [for (int start = 2020; start <= currentYear; start++) '$start-${start + 1}'];
-    selectedYear = years.last;
-
-    lichDayHomNay = BuoiHoc.buoiHocMau;
-    filterByDate(selectedDate);
+    controller = GiangVienController();
+    final maGV = widget.maGV ?? widget.giangVien?.maGV ?? 0;
+    controller.fetchLichDayHomNay(maGV);
   }
 
-  void filterByDate(DateTime date) {
-    isFilteringByDate = true;
-    displayedBuoiHoc = lichDayHomNay
-        .where((b) =>
-    parseNgay(b.ngay)?.year == date.year &&
-        parseNgay(b.ngay)?.month == date.month &&
-        parseNgay(b.ngay)?.day == date.day)
-        .toList();
-    setState(() => selectedDate = date);
-  }
-
-  void filterByTermYearWeek() {
-    isFilteringByDate = false;
-    displayedBuoiHoc = lichDayHomNay
-        .where((b) =>
-    b.ki == selectedTerm &&
-        b.namHoc == selectedYear &&
-        b.tuan == selectedWeek)
-        .toList();
-
-    if (displayedBuoiHoc.isNotEmpty) {
-      final firstBuoi = parseNgay(displayedBuoiHoc.first.ngay)!;
-      final startOfWeek = getStartOfWeek(firstBuoi);
-      final endOfWeek = getEndOfWeek(firstBuoi);
-
-      // Highlight hôm nay nếu nằm trong tuần, hoặc ngày đầu tuần
-      final now = DateTime.now();
-      if (now.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
-          now.isBefore(endOfWeek.add(const Duration(days: 1)))) {
-        selectedDate = now;
-      } else {
-        selectedDate = startOfWeek;
-      }
+  void _handleNavigationTap(int index) {
+    Widget nextScreen;
+    switch (index) {
+      case 0:
+        nextScreen = GiangVienDashboardScreen();
+        break;
+      case 1:
+        nextScreen = LichDayScreen(giangVien: widget.giangVien, maGV: widget.maGV);
+        break;
+      case 2:
+        nextScreen = const DiemDanhScreen();
+        break;
+      case 3:
+        nextScreen = QuanLyLopScreen(giangVien: widget.giangVien);
+        break;
+      case 4:
+        nextScreen = const ProfileScreen();
+        break;
+      default:
+        nextScreen = GiangVienDashboardScreen();
     }
 
-    setState(() {});
-  }
-
-  DateTime? parseNgay(dynamic ngay) {
-    if (ngay == null) return null;
-    if (ngay is DateTime) return ngay;
-    if (ngay is String) {
-      try {
-        return DateTime.parse(ngay);
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  Map<DateTime, List<BuoiHoc>> groupBuoiHocByDate(List<BuoiHoc> buoiHocList) {
-    final Map<DateTime, List<BuoiHoc>> grouped = {};
-    for (var b in buoiHocList) {
-      final date = parseNgay(b.ngay);
-      if (date == null) continue;
-      final key = DateTime(date.year, date.month, date.day);
-      if (!grouped.containsKey(key)) grouped[key] = [];
-      grouped[key]!.add(b);
-    }
-    final sortedKeys = grouped.keys.toList()..sort();
-    return {for (var k in sortedKeys) k: grouped[k]!};
-  }
-
-  DateTime getStartOfWeek(DateTime date) => date.subtract(Duration(days: date.weekday - 1));
-  DateTime getEndOfWeek(DateTime date) => getStartOfWeek(date).add(const Duration(days: 6));
-
-  List<DateTime> generateCalendarDays(DateTime month) {
-    final firstDayOfMonth = DateTime(month.year, month.month, 1);
-    final int startWeekday = firstDayOfMonth.weekday % 7;
-    final DateTime firstDisplayDay = firstDayOfMonth.subtract(Duration(days: startWeekday));
-
-    return List.generate(28, (i) => firstDisplayDay.add(Duration(days: i)));
-  }
-
-  String getWeekRangeFromDate(DateTime anyDateInWeek) {
-    final start = getStartOfWeek(anyDateInWeek);
-    final end = getEndOfWeek(anyDateInWeek);
-    return "Từ ${start.day}/${start.month}/${start.year} đến ${end.day}/${end.month}/${end.year}";
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => nextScreen),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final calendarDays = generateCalendarDays(selectedDate);
-
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: Colors.white,
-      drawer: GVSideMenu(
-        giangVienId: widget.giangVien?.maGV.toString() ?? '',
-        onClose: () => Navigator.pop(context),
-      ),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF154B71),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-            ),
-            const Spacer(),
-            const Text(
-              'LỊCH DẠY',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              icon: const Icon(Icons.notifications, color: Colors.white),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Không có thông báo mới")),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // --- Bộ lọc ---
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                DropdownButton(
-                  value: selectedTerm,
-                  items: terms
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedTerm = v!),
+    return ChangeNotifierProvider.value(
+      value: controller,
+      child: Consumer<GiangVienController>(
+        builder: (context, controller, _) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8FAFC),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: 1,
+              selectedItemColor: const Color(0xFF154B71),
+              unselectedItemColor: Colors.grey,
+              type: BottomNavigationBarType.fixed,
+              onTap: _handleNavigationTap,
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  label: 'Trang chủ',
                 ),
-                DropdownButton(
-                  value: selectedYear,
-                  items: years
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedYear = v!),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.calendar_month_outlined),
+                  label: 'Lịch dạy',
                 ),
-                DropdownButton(
-                  value: selectedWeek,
-                  items: weeks
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
-                  onChanged: (v) => setState(() => selectedWeek = v!),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.qr_code_2, size: 32),
+                  label: 'Điểm danh',
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF154B71)),
-                  onPressed: filterByTermYearWeek,
-                  child: const Text("Lọc", style: TextStyle(color: Colors.white)),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.people_outline),
+                  label: 'QL Lớp',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person_outline),
+                  label: 'Tôi',
                 ),
               ],
             ),
-          ),
-
-          // --- Lịch tháng ---
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: calendarDays.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  crossAxisSpacing: 4,
-                  mainAxisSpacing: 4,
-                  childAspectRatio: 1.2),
-              itemBuilder: (context, index) {
-                final day = calendarDays[index];
-                final isCurrentMonth = day.month == selectedDate.month;
-                final isSelected = day.year == selectedDate.year &&
-                    day.month == selectedDate.month &&
-                    day.day == selectedDate.day;
-                return GestureDetector(
-                  onTap: () => filterByDate(day),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF154B71) : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '${day.day}',
-                      style: TextStyle(
-                        color: isCurrentMonth
-                            ? (isSelected ? Colors.white : Colors.black)
-                            : Colors.grey,
-                        fontWeight: FontWeight.bold,
+            body: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 140,
+                  pinned: true,
+                  backgroundColor: const Color(0xFF154B71),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF154B71),
+                            const Color(0xFF0D2E47),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // --- Text "Lịch học" ---
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                const Text(
-                  "Lịch học",
-                  style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF154B71)),
-                ),
-                const SizedBox(width: 8),
-                if (!isFilteringByDate && displayedBuoiHoc.isNotEmpty)
-                  Text(
-                    getWeekRangeFromDate(parseNgay(displayedBuoiHoc.first.ngay)!),
-                    style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.normal),
-                  ),
-              ],
-            ),
-          ),
-
-          // --- Danh sách buổi học ---
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFF0F0F0), // nền xám
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(45), // bo góc trên trái
-                ),
-              ),
-              padding: const EdgeInsets.all(8),
-              child: displayedBuoiHoc.isEmpty
-                  ? const Center(child: Text("Không có buổi học"))
-                  : ListView(
-                children: [
-                  for (var entry in groupBuoiHocByDate(displayedBuoiHoc).entries)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${entry.key.day}/${entry.key.month}/${entry.key.year}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF154B71),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          for (var b in entry.value)
-                            Card(
-                              margin: const EdgeInsets.symmetric(vertical: 2),
-                              child: ListTile(
-                                leading: const Icon(Icons.book,
-                                    color: Color(0xFF154B71)),
-                                title: Text(b.tenMon),
-                                subtitle: Text(
-                                    "${b.phong} | Thứ: ${getThu(parseNgay(b.ngay))} | ${b.thoiGian ?? ''} | Lớp: ${b.lop}"),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'Lịch Dạy',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(
+                              'Hôm nay - ${DateFormat('EEEE, dd/MM/yyyy', 'vi_VN').format(DateTime.now())}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: _buildBody(controller),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBody(GiangVienController controller) {
+    if (controller.loadingLichDay) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            SizedBox(height: 60),
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Đang tải lịch dạy...'),
+            SizedBox(height: 60),
+          ],
+        ),
+      );
+    }
+
+    if (controller.errorLichDay != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 60),
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Lỗi: ${controller.errorLichDay}',
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 60),
+          ],
+        ),
+      );
+    }
+
+    if (controller.lichDayHomNay.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 80),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.calendar_today,
+                size: 64,
+                color: Colors.blue.shade300,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Không có lịch dạy hôm nay',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Hãy thư giãn và quay lại ngày khác',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 80),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: List.generate(
+        controller.lichDayHomNay.length,
+            (index) {
+          final BuoiHoc buoi = controller.lichDayHomNay[index];
+          final isLast = index == controller.lichDayHomNay.length - 1;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            child: _buildScheduleCard(buoi, index),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildScheduleCard(BuoiHoc buoi, int index) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF154B71),
+                          const Color(0xFF0D2E47),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          buoi.tenMon,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Lớp: ${buoi.maSoLopHP}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
+              const SizedBox(height: 16),
+              Container(
+                height: 1,
+                color: Colors.grey.withOpacity(0.2),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      Icons.access_time,
+                      '${buoi.gioBatDau} - ${buoi.gioKetThuc}',
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildInfoChip(
+                      Icons.meeting_room,
+                      'Phòng ${buoi.phongHoc}',
+                      Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildInfoChip(
+                Icons.calendar_today,
+                DateFormat('EEEE, dd/MM/yyyy', 'vi_VN').format(buoi.ngayHoc),
+                Colors.green,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color.withOpacity(0.8),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
       ),
-      bottomNavigationBar: const GiangVienBottomNav(currentIndex: 1),
     );
   }
 }

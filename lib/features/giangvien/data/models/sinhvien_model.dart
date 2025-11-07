@@ -1,3 +1,4 @@
+// sinhvien_model.dart
 import 'chitiet_sv_diemdanh_model.dart';
 
 class SinhVien {
@@ -6,8 +7,8 @@ class SinhVien {
   final String lop;
   String trangThai;
   String? avatar;
-  int soBuoiDiemDanh; // số buổi đã điểm danh trong học kỳ
-  List<DiemDanhBuoiHocChiTiet> diemDanhChiTiet; // danh sách chi tiết các buổi điểm danh
+  int soBuoiDiemDanh;
+  List<DiemDanhBuoiHocChiTiet> diemDanhChiTiet;
 
   SinhVien({
     required this.ma,
@@ -20,54 +21,38 @@ class SinhVien {
   }) : diemDanhChiTiet = diemDanhChiTiet ?? [];
 
   String get avatarOrDefault => avatar ?? 'assets/images/toandeptrai.jpg';
+
+  factory SinhVien.fromJson(Map<String, dynamic> json) {
+    String _asString(dynamic v, [String def = '']) => v == null ? def : v.toString();
+    int _asInt(dynamic v, [int def = 0]) {
+      if (v == null) return def;
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v) ?? def;
+      if (v is double) return v.toInt();
+      return def;
+    }
+
+    List<DiemDanhBuoiHocChiTiet> _asList(dynamic v) {
+      if (v is List) {
+        return v
+            .where((e) => e is Map<String, dynamic>)
+            .map((e) => DiemDanhBuoiHocChiTiet.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+      return <DiemDanhBuoiHocChiTiet>[];
+    }
+
+    return SinhVien(
+      ma: _asString(json['ma'] ?? json['maSV']),
+      ten: _asString(json['ten'] ?? json['tenSV']),
+      lop: _asString(json['lop']),
+      trangThai: _asString(json['trangThai'], 'unknown'),
+      avatar: json['avatar'] == null ? null : _asString(json['avatar']),
+      soBuoiDiemDanh: _asInt(json['soBuoiDiemDanh']),
+      diemDanhChiTiet: _asList(json['diemDanhChiTiet']),
+    );
+  }
 }
 
-// =================== DỮ LIỆU MẪU SINH VIÊN ===================
-final List<SinhVien> danhSachSinhVienMau = [
-  SinhVien(
-    ma: "SV001",
-    ten: "Nguyễn Văn A",
-    lop: "CNTT1",
-    trangThai: "Đúng giờ",
-    soBuoiDiemDanh: 20,
-    diemDanhChiTiet: [
-      DiemDanhBuoiHocChiTiet(
-        monHoc: "Lập trình Flutter",
-        lop: "CNTT1",
-        ngay: DateTime(2025, 10, 1),
-        gio: DateTime(2025, 10, 1, 7, 5),
-        phong: "B203",
-        trangThai: "Đúng giờ",
-      ),
-      DiemDanhBuoiHocChiTiet(
-        monHoc: "Lập trình Flutter",
-        lop: "CNTT1",
-        ngay: DateTime(2025, 10, 3),
-        gio: DateTime(2025, 10, 3, 7, 10),
-        phong: "B203",
-        trangThai: "Muộn",
-      ),
-    ],
-  ),
-  SinhVien(
-    ma: "SV002",
-    ten: "Trần Thị B",
-    lop: "CNTT1",
-    trangThai: "Đúng giờ",
-    soBuoiDiemDanh: 15,
-  ),
-  SinhVien(
-    ma: "SV003",
-    ten: "Lê Văn C",
-    lop: "CNTT2",
-    trangThai: "Muộn",
-    soBuoiDiemDanh: 17,
-  ),
-  SinhVien(
-    ma: "SV004",
-    ten: "Phạm Thị D",
-    lop: "CNTT2",
-    trangThai: "Đúng giờ",
-    soBuoiDiemDanh: 20,
-  ),
-];
+// (Lưu ý: Nếu bạn đang dùng lớp DiemDanhBuoiHocChiTiet thứ hai bên dưới file này thì giữ nguyên,
+// nhưng nên đảm bảo nơi parse DateTime sử dụng tryParse như đã làm ở file chitiet_sv_diemdanh_model.dart.)

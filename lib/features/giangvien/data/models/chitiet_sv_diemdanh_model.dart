@@ -1,54 +1,79 @@
 class DiemDanhBuoiHocChiTiet {
-  final String monHoc;       // Tên môn học
-  final String lop;          // Tên lớp
-  final DateTime ngay;       // Ngày điểm danh
-  final DateTime gio;        // Giờ điểm danh thực tế
-  final String phong;        // Phòng học
-  String trangThai;    // Trạng thái: "present", "absent", "late"
+  final String maBuoi;
+  final String maLopHP;
+  final String maGV;
+  final String thu;
+  final int tietBatDau;
+  final int tietKetThuc;
+  final DateTime ngayHoc;
+  final DateTime? gioBatDau;
+  final DateTime? gioKetThuc;
+  final String phongHoc;
+  String trangThai; // "Đúng giờ", "Đi muộn", "Vắng"
+  final String? maQR;
+  final DateTime? createdAt;
+  final int? up;
 
   DiemDanhBuoiHocChiTiet({
-    required this.monHoc,
-    required this.lop,
-    required this.ngay,
-    required this.gio,
-    required this.phong,
-    required this.trangThai,
+    required this.maBuoi,
+    required this.maLopHP,
+    required this.maGV,
+    required this.thu,
+    required this.tietBatDau,
+    required this.tietKetThuc,
+    required this.ngayHoc,
+    this.gioBatDau,
+    this.gioKetThuc,
+    required this.phongHoc,
+    this.trangThai = "unknown",
+    this.maQR,
+    this.createdAt,
+    this.up,
   });
-}
 
-// =================== DỮ LIỆU MẪU ===================
-final List<DiemDanhBuoiHocChiTiet> diemDanhChiTietMau = [
-  DiemDanhBuoiHocChiTiet(
-    monHoc: "Lập trình Android",
-    lop: "64KTPM.NB",
-    ngay: DateTime(2025, 10, 1),
-    gio: DateTime(2025, 10, 1, 7, 5), // giờ điểm danh thực tế
-    phong: "325 - A2",
-    trangThai: "đúng giờ",
-  ),
-  DiemDanhBuoiHocChiTiet(
-    monHoc: "Lập trình Android",
-    lop: "64KTPM.NB",
-    ngay: DateTime(2025, 10, 3),
-    gio: DateTime(2025, 10, 3, 7, 10),
-    phong: "325 - A2",
-    trangThai: "Đi muộn",
-  ),
-  DiemDanhBuoiHocChiTiet(
-    monHoc: "Lập trình Android",
-    lop: "64KTPM.NB",
-    ngay: DateTime(2025, 10, 5),
-    gio: DateTime(2025, 10, 5, 7, 0),
-    phong: "325 - A2",
-    trangThai: "Đúng giờ",
-  ),
-  DiemDanhBuoiHocChiTiet(
-    monHoc: "Lập trình Android",
-    lop: "64KTPM.NB",
-    ngay: DateTime(2025, 10, 8),
-    gio: DateTime(2025, 10, 8, 7, 2),
-    phong: "325 - A2",
-    trangThai: "Vắng",
-  ),
-  // ... bạn có thể thêm nhiều buổi khác
-];
+  factory DiemDanhBuoiHocChiTiet.fromJson(Map<String, dynamic> json) {
+    int _asInt(dynamic v, [int def = 0]) {
+      if (v == null) return def;
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v) ?? def;
+      if (v is double) return v.toInt();
+      return def;
+    }
+
+    String _asString(dynamic v, [String def = '']) {
+      if (v == null) return def;
+      return v.toString();
+    }
+
+    DateTime _asDate(dynamic v, {DateTime? def}) {
+      if (v == null) return def ?? DateTime.now();
+      if (v is DateTime) return v;
+      if (v is String) return DateTime.tryParse(v) ?? (def ?? DateTime.now());
+      return def ?? DateTime.now();
+    }
+
+    DateTime? _asDateOrNull(dynamic v) {
+      if (v == null) return null;
+      if (v is DateTime) return v;
+      if (v is String) return DateTime.tryParse(v);
+      return null;
+    }
+
+    return DiemDanhBuoiHocChiTiet(
+      maBuoi: _asString(json['maBuoi']),
+      maLopHP: _asString(json['maLopHP']),
+      maGV: _asString(json['maGV']),
+      thu: _asString(json['thu']),
+      tietBatDau: _asInt(json['tietBatDau']),
+      tietKetThuc: _asInt(json['tietKetThuc']),
+      ngayHoc: _asDate(json['ngayHoc']),
+      gioBatDau: _asDateOrNull(json['gioBatDau']),
+      gioKetThuc: _asDateOrNull(json['gioKetThuc']),
+      phongHoc: _asString(json['phongHoc']),
+      trangThai: _asString(json['trangThai'], 'unknown'),
+      maQR: json['maQR'] == null ? null : _asString(json['maQR']),
+      createdAt: _asDateOrNull(json['created_at']),
+      up: json['up'] == null ? null : _asInt(json['up']),
+    );
+  }
+}
